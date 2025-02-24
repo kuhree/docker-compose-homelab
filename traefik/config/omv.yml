@@ -1,0 +1,16 @@
+http:
+  routers:
+    pve-vm-omv:
+      rule: Host(`omv.littlevibe.net`)
+      entryPoints: https
+      service: pve-vm-omv-srv
+      tls:
+        certResolver: sslresolver
+
+  services:
+    pve-vm-omv-srv:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://100.107.179.4
+

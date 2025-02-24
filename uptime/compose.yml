@@ -1,0 +1,24 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - uptime
+    volumes:
+      - uptime-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro # optional but required for Docker integration
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.uptime.rule=Host(`uptime.${DOMAIN:?}`)
+      - traefik.http.routers.uptime.entrypoints=https
+      - traefik.http.routers.uptime.tls=true
+      - traefik.http.routers.uptime.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=uptime kuma
+      - flame.url=https://uptime.${DOMAIN:?}
+      - flame.icon=graph
+
+volumes:
+  uptime-data:

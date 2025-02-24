@@ -1,0 +1,93 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: DEBUG
+  format: common
+  # filePath: "/var/log/traefik/traefik.log"
+
+accessLog:
+  format: common
+  filePath: "/var/log/traefik/access.log"
+
+api:
+  dashboard: true
+  debug: true
+  insecure: true
+
+metrics:
+  prometheus:
+    entryPoint: prometheus
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+  addInternals: true
+
+entryPoints:
+  prometheus:
+      address: :8082
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+  https:
+    address: ":443"
+  git:
+    address: ":2424"
+  misc:
+    address: ":9999"
+
+serversTransport:
+  insecureSkipVerify: true
+
+providers:
+  docker:
+    watch: true
+    network: proxy
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    directory: "/config" # Adjust the path according your needs.
+    watch: true
+
+tls:
+  certificates:
+    - certFile: /certs/littlevibe.net.crt
+      keyFile: /certs/littlevibe.net.key
+    - certFile: /certs/_littlevibe.net.crt
+      keyFile: /certs/_littlevibe.net.key
+  stores:
+    default:
+      defaultGeneratedCert:
+        resolver: sslresolver
+        domain:
+          main: littlevibe.net
+          sans:
+            - "*.littlevibe.net"
+
+certificatesResolvers:
+  sslresolver:
+    acme:
+      email: kj@gvempire.com
+      storage: /etc/traefik/acme.json
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory" # For testing, to avoid rate-limit
+      caServer: "https://acme-v02.api.letsencrypt.org/directory" # For production use only
+      
+      ## TLS Challenge
+      # tlsChallenge: {}
+
+      ## HTTP Challenge
+      # onHostRule: true
+      # httpChallenge:
+      #   entryPoint: http
+      
+      ## DNS Challenge (required for wildcard certs)
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"

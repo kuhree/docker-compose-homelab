@@ -1,0 +1,2 @@
+docker exec --user www-data ${OWNCLOUD_CONTAINER:-littlevibe-owncloud-1} \
+php console.php files:scan --all

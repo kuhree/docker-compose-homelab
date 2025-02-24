@@ -1,0 +1,47 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    restart: unless-stopped
+    depends_on:
+      - vaultwarden-db
+    profiles:
+      - all
+      - service
+      - vaultwarden
+    volumes:
+      - vaultwarden-data:/data
+    environment:
+      # https://github.com/dani-garcia/vaultwarden/blob/main/.env.template
+      DOMAIN: https://vault.${DOMAIN:?}
+      DATABASE_URL: postgresql://postgres:${ADMIN_PASSWORD:?}@${NAME:?}-vaultwarden-db-1:5432/vaultwarden
+      ## Controls if new users can register
+      SIGNUPS_ALLOWED: true
+      ## Controls if new users from a list of comma-separated domains can register
+      ## even if SIGNUPS_ALLOWED is set to false
+      SIGNUPS_DOMAINS_WHITELIST: gvempire.com,${DOMAIN:?}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vault.rule=Host(`vault.${DOMAIN:?}`)"
+      - "traefik.http.routers.vault.entrypoints=https"
+      - "traefik.http.routers.vault.tls.certresolver=sslresolver"
+      - flame.type=application
+      - flame.name=vaultwarden
+      - flame.url=https://vault.${DOMAIN:?}
+      - flame.icon=onepassword
+  
+  vaultwarden-db:
+    image: postgres:14
+    restart: always
+    profiles:
+      - all
+      - service
+      - vaultwarden
+    volumes:
+      - vaultwarden-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=vaultwarden
+      - POSTGRES_PASSWORD=${ADMIN_PASSWORD:?}
+
+volumes:
+  vaultwarden-data:
+  vaultwarden-db-data:

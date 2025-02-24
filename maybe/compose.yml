@@ -1,0 +1,48 @@
+services:
+  maybe:
+    image: ghcr.io/maybe-finance/maybe:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - maybe
+    depends_on:
+      maybe-db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_HOST: "${NAME:?}-maybe-db-1"
+      RAILS_ENV: "production"
+      RAILS_FORCE_SSL: false
+      RAILS_ASSUME_SSL: false
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.maybe.entrypoints=https
+      - traefik.http.routers.maybe.rule=Host(`maybe.${DOMAIN:?}`)
+      - traefik.http.routers.maybe.tls=true
+      - traefik.http.routers.maybe.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Maybe
+      - flame.url=maybe.${DOMAIN:?}
+      - flame.icon=money
+
+  maybe-db:
+    image: postgres:16
+    restart: unless-stopped
+    profiles:
+      - all
+      - maybe
+    volumes:
+      - maybe-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  maybe-db-data:

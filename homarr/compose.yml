@@ -1,0 +1,24 @@
+services:
+  homarr:
+    image: ghcr.io/ajnart/homarr:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - homarr
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Optional, only if you want docker integration
+      - homarr-config:/app/data/configs
+      - homarr-icons:/app/public/icons
+      - homarr-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.homarr.rule=Host(`homarr.${DOMAIN:?}`)
+      - traefik.http.routers.homarr.entrypoints=https
+      - traefik.http.routers.homarr.tls=true
+      - traefik.http.routers.homarr.tls.certresolver=sslresolver
+
+volumes:
+  homarr-config:
+  homarr-icons:
+  homarr-data:

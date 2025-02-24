@@ -1,0 +1,158 @@
+services:
+  sabnzbd:
+    image: ghcr.io/hotio/sabnzbd:latest
+    restart: unless-stopped
+    logging:
+      driver: json-file
+    profiles:
+      - all
+      - arr
+      - sabnzbd
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - sabnzbd-config:/config
+      - ${MEDIA_USENET:?}:/data/usenet # .nzb files 
+    environment:
+      - TZ
+      - PUID
+      - PGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sabnzbd.rule=Host(`nzb.${DOMAIN:?}`)
+      - traefik.http.routers.sabnzbd.entrypoints=https
+      - traefik.http.routers.sabnzbd.tls=true
+      - traefik.http.routers.sabnzbd.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=SABnzbd
+      - flame.url=https://nzb.${DOMAIN:?}
+      - flame.icon=progress-download
+
+  nzbhydra:
+    image: ghcr.io/hotio/nzbhydra2:latest
+    restart: unless-stopped
+    depends_on:
+      - sabnzbd
+    profiles:
+      - all
+      - arr
+      - nzbhydra
+    volumes:
+      - nzbhydra-config:/config
+      - ${MEDIA_USENET:?}:/data/usenet # .nzb files
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ
+      - PUID
+      - PGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nzbhydra.rule=Host(`nzbhydra.${DOMAIN:?}`)
+      - traefik.http.routers.nzbhydra.entrypoints=https
+      - traefik.http.routers.nzbhydra.tls=true
+      - traefik.http.routers.nzbhydra.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=NZBHydra2
+      - flame.url=https://nzbhydra.${DOMAIN:?}
+      - flame.icon=search-web
+
+  prowlarr:
+    image: ghcr.io/hotio/prowlarr:latest
+    restart: unless-stopped
+    depends_on:
+      - sabnzbd
+    profiles:
+      - all
+      - arr
+      - prowlarr
+    volumes:
+      - prowlarr-config:/config # config files
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ
+      - PUID
+      - PGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN:?}`)
+      - traefik.http.routers.prowlarr.entrypoints=https
+      - traefik.http.routers.prowlarr.tls=true
+      - traefik.http.routers.prowlarr.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Prowlarr
+      - flame.url=https://prowlarr.${DOMAIN:?}
+      - flame.icon=shield-search
+
+  sonarr:
+    image: ghcr.io/hotio/sonarr:latest
+    restart: unless-stopped
+    depends_on:
+      - prowlarr
+    profiles:
+      - all
+      - arr
+      - sonarr
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - sonarr-config:/config # config files
+      - ${MEDIA:?}:/data
+    environment:
+      - TZ
+      - PUID
+      - PGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN:?}`)
+      - traefik.http.routers.sonarr.entrypoints=https
+      - traefik.http.routers.sonarr.tls=true
+      - traefik.http.routers.sonarr.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Sonarr
+      - flame.url=https://sonarr.${DOMAIN:?}
+      - flame.icon=television
+
+  radarr:
+    image: ghcr.io/hotio/radarr:latest
+    restart: unless-stopped
+    depends_on: 
+      - prowlarr
+    profiles:
+      - all
+      - arr
+      - radarr
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - radarr-config:/config
+      - ${MEDIA:?}:/data
+    environment:
+      - TZ
+      - PUID
+      - PGID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN:?}`)
+      - traefik.http.routers.radarr.entrypoints=https
+      - traefik.http.routers.radarr.tls=true
+      - traefik.http.routers.radarr.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Radarr
+      - flame.url=https://radarr.${DOMAIN:?}
+      - flame.icon=movie-open-outline
+
+volumes:
+  sabnzbd-config:
+  nzbhydra-config:
+  prowlarr-config:
+  radarr-config:
+  sonarr-config:
+  usenet:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEDIA_USENET:?}
+  media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEDIA:?}

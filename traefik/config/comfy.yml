@@ -1,0 +1,16 @@
+http:
+  routers:
+    comfy:
+      rule: Host(`comfy.littlevibe.net`)
+      entryPoints: https
+      service: comfy-srv
+      tls:
+        certResolver: sslresolver
+
+  services:
+    comfy-srv:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://100.106.147.21:7860
+

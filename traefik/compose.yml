@@ -1,0 +1,68 @@
+services:
+  traefik:
+    image: traefik:v3.0.0
+    restart: unless-stopped
+    profiles:
+      - all
+      - debug
+      - internal
+      - traefik
+    security_opt:
+      - no-new-privileges:true
+    extra_hosts: 
+      - "host.docker.internal:host-gateway"
+    network_mode: host
+      # ports:
+      # - "80:80" # http
+      # - "443:443" # https
+      # - "8080:8080" # dashboard
+      # - "9999:9999" # misc
+      # - "${GIT_SSH_PORT:?}:${GIT_SSH_PORT:?}" # git
+    environment:
+      - TZ
+      - PUID
+      - GUID
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN:?}
+      - CLOUDFLARE_POLLING_INTERVAL=10 # seconds: default 2
+      - CLOUDFLARE_PROPAGATION_TIMEOUT=300 #seconds: default 180
+    dns:
+      - 1.1.1.1 # Cloudflare DNS server
+      - 1.0.0.1 
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/traefik.yml:ro"
+      - "./config:/config:ro"
+      - "traefik-acme:/etc/traefik"
+      - "traefik-logs:/var/log/traefik"
+      - "traefik-certs:/certs"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.entrypoints=https
+      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN:?}`)
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Traefik
+      - flame.url=https://${DOMAIN}:8080
+      - flame.icon=wifi
+
+volumes:
+  traefik-acme:
+    driver: local
+    # driver_opts:
+      # type: none
+      # o: bind
+      # device: ./_data
+  traefik-logs:
+    driver: local
+    # driver_opts:
+      # type: none
+      # o: bind
+      # device: ./_logs
+  traefik-certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./_certs

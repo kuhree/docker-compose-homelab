@@ -1,0 +1,68 @@
+services:
+  twenty:
+    image: twentycrm/twenty:${TAG}
+    restart: unless-stopped
+    profiles:
+      - all 
+      - service
+      - twenty
+    depends_on:
+      twenty-db:
+        condition: service_healthy
+    ports:
+      - "${PORT:?}:${PORT:?}"
+    environment:
+      PORT: ${PORT:?}
+      PG_DATABASE_URL: postgres://twenty:twenty@${PG_DATABASE_HOST}/default
+      SERVER_URL: ${SERVER_URL:?}
+      FRONT_BASE_URL: ${FRONT_BASE_URL:-$SERVER_URL}
+
+      ENABLE_DB_MIGRATIONS: "true"
+
+      SIGN_IN_PREFILLED: ${SIGN_IN_PREFILLED:?}
+      STORAGE_TYPE: ${STORAGE_TYPE:?}
+      # STORAGE_S3_REGION: ${STORAGE_S3_REGION:?}
+      # STORAGE_S3_NAME: ${STORAGE_S3_NAME:?}
+      # STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT:?}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?}
+      LOGIN_TOKEN_SECRET: ${LOGIN_TOKEN_SECRET:?}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?}
+      FILE_TOKEN_SECRET: ${FILE_TOKEN_SECRET:?}
+    volumes:
+      - twenty-data:/app/${STORAGE_LOCAL_PATH:-.local-storage}
+    healthcheck:
+      test: curl --fail http://twenty:${PORT:?}/healthz
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.twenty.entrypoints=https
+      - traefik.http.routers.twenty.rule=Host(`twenty.${DOMAIN:?}`)
+      - traefik.http.routers.twenty.tls=true
+      - traefik.http.routers.twenty.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Twenty
+      - flame.url=${SERVER_URL:?}
+      - flame.icon=account-group
+
+  twenty-db:
+    image: twentycrm/twenty-postgres:${TAG}
+    profiles:
+      - all 
+      - service
+      - twenty
+    restart: unless-stopped
+    volumes:
+      - twenty-db-data:/bitnami/postgresql
+    environment:
+      POSTGRES_PASSWORD: ${ADMIN_PASSWORD:?}
+    healthcheck:
+      test: pg_isready -U twenty -d default
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  twenty-db-data:
+  twenty-data:

@@ -1,0 +1,15 @@
+http:
+  routers:
+    adguard:
+      rule: Host(`adguard.littlevibe.net`)
+      entryPoints: https
+      service: adguard-srv
+      tls:
+        certResolver: sslresolver
+
+  services:
+    adguard-srv:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://100.97.222.110 # Use tailscale ip

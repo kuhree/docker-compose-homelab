@@ -1,0 +1,28 @@
+services:
+  ollama:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/app/backend/data
+    environment:
+      - OLLAMA_BASE_URL=http://nvidia-prod-1:11434
+      # - OLLAMA_BASE_URLS=http://pve-ct-nvidia:11434;http://nvidia-prod-1:11434
+      - WEB_URL=https://ollama.${DOMAIN:?}
+      - WEBUI_NAME=Ollama
+    profiles:
+      - all
+      - service
+      - ollama
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ollama.entrypoints=https
+      - traefik.http.routers.ollama.rule=Host(`ollama.${DOMAIN:?}`)
+      - traefik.http.routers.ollama.tls=true
+      - traefik.http.routers.ollama.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=ollama
+      - flame.url=ollama.${DOMAIN:?}
+      - flame.icon=globe-model
+
+volumes:
+  ollama-data:

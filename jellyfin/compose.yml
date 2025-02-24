@@ -1,0 +1,69 @@
+services:
+  jellyfin:
+    image: ghcr.io/hotio/jellyfin:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - arr
+      - jellyfin
+    volumes:
+      - jellyfin-config:/config # config folder
+      - jellyfin-media:/data/media # library folder
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ
+      - PUID
+      - PGID
+      - JELLYFIN_PublishedServerUrl=http://jellyfin.${DOMAIN:?}
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           capabilities: [ gpu, utility, compute, video ]
+    #           count: 1
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyfin.rule=Host(`jellyfin.${DOMAIN:?}`)
+      - traefik.http.routers.jellyfin.entrypoints=https
+      - traefik.http.routers.jellyfin.tls=true
+      - traefik.http.routers.jellyfin.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=jellyfin
+      - flame.url=https://jellyfin.${DOMAIN:?}
+      - flame.icon=jellyfish-outline
+
+  jellyseerr:
+    image: ghcr.io/hotio/jellyseerr:latest
+    restart: unless-stopped
+    depends_on: 
+      - jellyfin
+    profiles:
+      - all
+      - arr
+      - jellyfin
+      - jellyseer
+    volumes:
+      - jellyseerr-config:/app/config
+      - /etc/localtime:/etc/localtime:ro
+    environment: [ TZ, PUID, PGID ]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyseerr.rule=Host(`jellyseerr.${DOMAIN:?}`)
+      - traefik.http.routers.jellyseerr.entrypoints=https
+      - traefik.http.routers.jellyseerr.tls=true
+      - traefik.http.routers.jellyseerr.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Jellyseer
+      - flame.url=https://jellyseerr.${DOMAIN:?}
+      - flame.icon=jellyfish
+
+volumes:
+  jellyfin-config:
+  jellyseerr-config:
+  jellyfin-media:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MEDIA_LIBRARY:?}

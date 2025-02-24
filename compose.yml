@@ -1,0 +1,31 @@
+name: littlevibe
+
+networks:
+  default:
+    name: proxy
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.0.0/22
+          gateway: 172.30.0.1
+
+include:
+  - arr/compose.yml
+  - dash/compose.yml
+  - flame/compose.yml
+  - gitea/compose.yml
+  - grafana/compose.yml
+  - grafana/exporters.yml
+  - homarr/compose.yml
+  - it-tools/compose.yml
+  - jellyfin/compose.yml
+  - maybe/compose.yml
+  - metabase/compose.yml
+  - ollama/compose.yml
+  - owncloud/compose.yml
+  - portainer/compose.yml
+  - semaphore/compose.yml
+  - traefik/compose.yml
+  - twenty/compose.yml
+  - uptime/compose.yml
+  - vaultwarden/compose.yml

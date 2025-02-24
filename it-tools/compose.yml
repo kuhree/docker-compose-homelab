@@ -1,0 +1,18 @@
+services:
+  it-tools:
+    image: corentinth/it-tools:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - it-tools
+    labels: 
+      - traefik.enable=true
+      - traefik.http.routers.tools.rule=Host(`tools.${DOMAIN:?}`)
+      - traefik.http.routers.tools.entrypoints=https
+      - traefik.http.routers.tools.tls=true
+      - traefik.http.routers.tools.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=IT Tools
+      - flame.url=https://tools.${DOMAIN:?}
+      - flame.icon=hammer-wrench

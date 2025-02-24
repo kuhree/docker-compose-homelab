@@ -1,0 +1,24 @@
+http:
+  routers:
+    pve:
+      rule: Host(`pve.littlevibe.net`)
+      entryPoints: https
+      service: pve-srv
+      # User builtin proxmox certs
+    pve-prod-1:
+      rule: Host(`pve-prod-1.littlevibe.net`)
+      entryPoints: https
+      service: pve-prod-1-srv
+      # Use builtin proxmox certs
+
+  services:
+    pve-srv:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://100.78.13.123:8006" # Use tailscale ip
+    pve-prod-1-srv:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://100.115.245.10:8006 # Use tailscale ip

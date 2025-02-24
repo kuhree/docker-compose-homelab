@@ -1,0 +1,55 @@
+services:
+  metabase:
+    image: metabase/metabase:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - metabase
+    volumes:
+      - /dev/urandom:/dev/random:ro
+      - metabase-data:/metabase-data
+    environment:
+      - MUID=${PUID:?}
+      - MGID=${PGID:?}
+      - JAVA_TIMEZONE=${TZ:?}
+      - MB_DB_FILE=/metabase-data/metabase.db
+      - MB_DB_TYPE=postgres
+      - MB_DB_USER=${ADMIN_USER:?}
+      - MB_DB_PASS=${ADMIN_PASSWORD:?}
+      - MB_DB_DBNAME=metabase
+      - MB_DB_HOST=metabase-db
+      - MB_DB_PORT=5432
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.metabase.rule=Host(`metabase.${DOMAIN:?}`)
+      - traefik.http.routers.metabase.entrypoints=https
+      - traefik.http.routers.metabase.tls=true
+      - traefik.http.routers.metabase.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=metabase
+      - flame.url=https://metabase.${DOMAIN:?}
+      - flame.icon=view-metabaseboard
+
+  metabase-db:
+    image: postgres:latest
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - metabase
+    environment:
+      POSTGRES_DB: metabase
+      POSTGRES_USER: ${ADMIN_USER:?}
+      POSTGRES_PASSWORD: ${ADMIN_PASSWORD:?}
+    volumes: 
+      - metabase-db-data:/var/lib/postgresql/data
+
+volumes:
+  metabase-data:
+  metabase-db-data:

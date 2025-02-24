@@ -1,0 +1,51 @@
+services:
+  gitea:
+    image: gitea/gitea:1.21.11
+    restart: unless-stopped
+    profiles:
+      - all
+      - internal
+      - gitea
+    ports:
+      - "3000:3000"
+      - "222:22"
+    depends_on:
+      - gitea-db
+    env_file:
+      - .env
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels: 
+      - traefik.enable=true
+      - traefik.http.routers.git.rule=Host(`git.${DOMAIN:?}`)
+      - traefik.http.routers.git.entrypoints=https,git
+      - traefik.http.routers.git.tls=true
+      - traefik.http.routers.git.tls.certresolver=sslresolver
+      - traefik.http.services.git.loadbalancer.server.port=3000
+      # - traefik.http.routers.git.rule=Host(`git.${DOMAIN:?}`)
+      # - traefik.http.routers.git.entrypoints=git
+      # - traefik.http.services.git.loadbalancer.server.port=22
+      - flame.type=application
+      - flame.name=Gitea
+      - flame.url=https://git.${DOMAIN:?}
+      - flame.icon=git
+
+
+  gitea-db:
+    image: postgres:14
+    restart: unless-stopped
+    profiles:
+      - all
+      - internal
+      - gitea
+    env_file:
+      - .env
+    volumes:
+      - gitea-db-data:/var/lib/postgresql/data
+
+volumes:
+  gitea-data:
+    driver: local
+  gitea-db-data:

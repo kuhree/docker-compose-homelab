@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# One of (<empty>,all,debug,light,media,game)
+mode="${1:-default}"
+args="${@:2}"
+
+profiles=""
+case $mode in
+  debug)
+    profiles="debug" ;;
+
+  internal) 
+    profiles="internal" ;;
+  internal-prod) 
+    profiles="debug,internal" ;;
+
+  service) 
+    profiles="service" ;;
+  service-prod) 
+    profiles="debug,internal,service" ;;
+
+  arr) 
+    profiles="arr" ;;
+  arr-prod) 
+    profiles="debug,internal,service,arr" ;;
+
+  all)
+    profiles="debug,internal,service,arr";;
+
+  *) 
+    profiles="all"
+    args="${@}";;
+esac
+
+COMPOSE_PROFILES="$profiles" \
+  docker compose $args

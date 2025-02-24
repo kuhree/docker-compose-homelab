@@ -1,0 +1,15 @@
+# http:
+#   routers:
+#     demo:
+#       rule: Host(`demo.littlevibe.net`)
+#       entryPoints: https
+#       service: demo-srv
+#       tls:
+#         certResolver: sslresolver
+
+#   services:
+#     demo-srv:
+#       loadBalancer:
+#         passHostHeader: true
+#         servers:
+#           - url: http://100.107.179.4 # Use tailscale ip

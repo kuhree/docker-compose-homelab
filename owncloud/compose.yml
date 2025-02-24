@@ -1,0 +1,89 @@
+services:
+  owncloud:
+    image: owncloud/server:${OWNCLOUD_VERSION:?}
+    restart: always
+    ports:
+      - ${OWNCLOUD_HTTP_PORT:?}:8080
+    profiles:
+      - all
+      - service
+      - owncloud
+    depends_on:
+      - owncloud-db
+      - owncloud-memcache
+    environment:
+      - OWNCLOUD_DOMAIN=drive.${DOMAIN:?}
+      - OWNCLOUD_TRUSTED_DOMAINS=172.30.0.0/24,drive.${DOMAIN:?}
+      - OWNCLOUD_DB_TYPE=mysql
+      - OWNCLOUD_DB_NAME=owncloud
+      - OWNCLOUD_DB_USERNAME=${ADMIN_USER:?}
+      - OWNCLOUD_DB_PASSWORD=${ADMIN_PASSWORD:?}
+      - OWNCLOUD_DB_HOST=${NAME:?}-owncloud-db-1
+      - OWNCLOUD_ADMIN_USERNAME=${ADMIN_USER:?}
+      - OWNCLOUD_ADMIN_PASSWORD=${ADMIN_PASSWORD:?}
+      - OWNCLOUD_MYSQL_UTF8MB4=true
+      - OWNCLOUD_REDIS_ENABLED=true
+      - OWNCLOUD_REDIS_HOST=${NAME:?}-owncloud-memcache-1
+    healthcheck:
+      test: ["CMD", "/usr/bin/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - owncloud-data:/mnt/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cloud.rule=Host(`drive.${DOMAIN:?}`)
+      - traefik.http.routers.cloud.entrypoints=https
+      - traefik.http.routers.cloud.tls=true
+      - traefik.http.routers.cloud.tls.certresolver=sslresolver
+      - flame.type=application
+      - flame.name=Owncloud
+      - flame.url=https://drive.${DOMAIN:?}
+      - flame.icon=cloud
+
+  owncloud-db:
+    image: mariadb:10.11 # minimum required ownCloud version is 10.9
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - owncloud
+    environment:
+      - MYSQL_DATABASE=owncloud
+      - MYSQL_USER=${ADMIN_USER:?}
+      - MYSQL_ROOT_PASSWORD=${ADMIN_PASSWORD:?}
+      - MYSQL_PASSWORD=${ADMIN_PASSWORD:?}
+      - MARIADB_AUTO_UPGRADE=1
+    command: ["--max-allowed-packet=128M", "--innodb-log-file-size=64M"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "--password=owncloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - owncloud-db:/var/lib/mysql
+
+  owncloud-memcache:
+    image: redis:6
+    restart: unless-stopped
+    profiles:
+      - all
+      - service
+      - owncloud
+    command: ["--databases", "1"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - owncloud-memcache:/data
+
+volumes:
+  owncloud-data:
+  owncloud-db:
+    driver: local
+  owncloud-memcache:
+    driver: local
+
