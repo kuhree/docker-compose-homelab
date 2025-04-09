@@ -138,12 +138,104 @@ services:
       - flame.url=https://radarr.${DOMAIN:?}
       - flame.icon=movie-open-outline
 
+  readarr:
+    image: ghcr.io/hotio/readarr:latest
+    profiles:
+      - all
+      - arr
+      - readarr
+    depends_on:
+      - prowlarr
+    volumes:
+      - readarr-config:config
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIA:?}:/data
+    environment:
+      - TZ
+      - PUID
+      - PGID
+      - COMPlus_EnableDiagnostics=0 # Fix: `Failed to create CoreCLR`
+    labels:
+      - traefik.enable=true
+      - traefik.swarm.network=proxy
+      - traefik.http.routers.readarr.rule=Host(`readarr.${DOMAIN:?}`)
+      - traefik.http.routers.readarr.entrypoints=websecure
+      - traefik.http.routers.readarr.tls=true
+      - traefik.http.routers.readarr.tls.certresolver=sslresolver
+      - flame.name=readarr
+      - flame.icon=di:readarr
+      - flame.url=https://readarr.${DOMAIN:?}
+      - flame.description=ebook manager
+
+  speakarr:
+    image: ghcr.io/hotio/readarr:latest
+    profiles:
+      - all
+      - arr
+      - speakarr
+    depends_on:
+      - prowlarr
+    volumes:
+      - speakarr-config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIA:?}:/data
+    environment:
+      - TZ
+      - PUID
+      - PGID
+      - COMPlus_EnableDiagnostics=0 # Fix: `Failed to create CoreCLR`
+    labels:
+      - traefik.enable=true
+      - traefik.swarm.network=proxy
+      - traefik.http.routers.speakarr.rule=Host(`speakarr.${DOMAIN:?}`)
+      - traefik.http.routers.speakarr.entrypoints=websecure
+      - traefik.http.routers.speakarr.tls=true
+      - traefik.http.routers.speakarr.tls.certresolver=sslresolver
+      - traefik.http.services.speakarr.loadbalancer.server.port=8787
+      - flame.name=speakarr
+      - flame.icon=di:speakarr
+      - flame.url=https://speakarr.${DOMAIN:?}
+      - flame.description=audiobook manager
+
+  lazylibrarian:
+    image: ghcr.io/linuxserver/lazylibrarian:latest
+    profile:
+      - all
+      - arr
+      - lazylibrarian
+    depends_on:
+      - prowlarr
+    volumes:
+      - lazylibrarian-config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIA:?}:/data
+    environment:
+      - TZ
+      - PUID
+      - PGID
+      - DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg #optional
+    labels:
+      - traefik.enable=true
+      - traefik.swarm.network=proxy
+      - traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.${DOMAIN:?}`)
+      - traefik.http.routers.lazylibrarian.entrypoints=websecure
+      - traefik.http.routers.lazylibrarian.tls=true
+      - traefik.http.routers.lazylibrarian.tls.certresolver=sslresolver
+      - traefik.http.services.lazylibrarian.loadbalancer.server.port=5299
+      - flame.name=lazylibrarian
+      - flame.icon=di:lazylibrarian
+      - flame.url=https://lazylibrarian.${DOMAIN:?}
+      - flame.description=ebook manager
+
 volumes:
   sabnzbd-config:
   nzbhydra-config:
   prowlarr-config:
   radarr-config:
   sonarr-config:
+  readarr-config:
+  speakarr-config:
+  lazylibrarian-config:
   usenet:
     driver: local
     driver_opts:
